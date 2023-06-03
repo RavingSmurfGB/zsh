@@ -1,0 +1,14 @@
+
+
+
+- name: install choco packages
+  # we iterate somehow????????? through host_var packages.yml and select chocolatey_packages
+  loop: "{{ chocolatey_packages }}"
+  #https://docs.ansible.com/ansible/latest/collections/chocolatey/chocolatey/win_chocolatey_module.html
+  win_chocolatey:
+      # the name of the package will be each of chocolatey_package's items
+      name: "{{ item }}"
+
+    become: yes
+    become_user: Administrator
+    become_method: runas

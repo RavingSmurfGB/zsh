@@ -1,0 +1,5 @@
+#These are the packages that will be iterated through
+chocolatey_packages:
+  - spotify
+  - qobuz
+  - youtube

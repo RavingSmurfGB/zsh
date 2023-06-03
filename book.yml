@@ -1,0 +1,12 @@
+---
+#This is the main ansible playbook:
+
+#We select all hsots
+- hosts: all
+  #become means to enable the stuff..
+  become: yes
+  #We will iterate through the following directories
+  roles:
+    #the directory install will be searched for tasks - main.yml should be a task
+    - role: install
+
