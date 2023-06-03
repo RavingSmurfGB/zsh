@@ -10,7 +10,7 @@ IGNORE README, IGNORE README, IGNORE README, IGNORE README, IGNORE README, IGNOR
 
 
 
-
+kindas based on - https://github.com/Lileso/the_black_pearl_ansible/blob/main/roles/nginx/tasks/main.yml
 
 
 
