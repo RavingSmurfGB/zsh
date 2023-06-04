@@ -1,0 +1,131 @@
+ignore jess....
+
+
+You don’t need to be a seasoned DevOps professional to benefit from Ansible and related automation tools in your personal workspace. I will show an example setup I use to automate my personal Windows 10 and Ubuntu 20.04 workstation configuration (a similar approach would also work for MacOS).
+
+The main goal of this setup is automating software installation, updates and configuration to quickly get my development environment running on both Ubuntu and Windows, so the system can be recreated effortlessly in case of stability issues or when switching to a new machine, taking less than an hour to setup each OS with the essentials to be ready for work. The key tools that will come in handy (besides Ansible) will be Snap (for Linux packages), Mackup (for Linux dotfiles/configuration backup) and Chocolatey (for Windows packages).
+
+I will be installing VSCode, git, Node.js (nvm), Docker, Chromium, Slack and Dropbox on both systems.
+
+Configuring Windows 10
+
+First I run the following script in cmd to setup WinRM for Ansible:
+powershell.exe -ExecutionPolicy ByPass -File "windows-host-setup.ps1"
+
+$url = "https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"
+$file = "$env:temp\ConfigureRemotingForAnsible.ps1"
+(New-Object -TypeName System.Net.WebClient).DownloadFile($url, $file)
+powershell.exe -ExecutionPolicy ByPass -File $file
+
+
+Then, to execute my Ansible playbook on Windows I need a running Ansible control node which requires a Linux environment and the simplest way to get that running on the same machine is Windows Subsystem for Linux (WSL).
+Windows Subsystem for Linux
+
+    Windows search for Turn Windows features on or off, check Windows Subsystem for Linux, install, reboot;
+    Install and launch Ubuntu 20.04 from the Windows Store;
+    Create a user with password;
+    Install Ansible: sudo apt update && sudo apt install -y ansible
+    Run the Windows playbook: ansible-playbook windows-playbook.yml -i windows-inventory.yml --ask-pass --verbose
+
+windows-playbook.yml 
+--
+- hosts: localhost
+  connection: local
+  tasks:
+    - name: Install Chocolatey packages
+      win_chocolatey:
+        name:
+        - vscode
+        - git
+        - nvm
+        - docker-desktop
+        - chromium
+        - slack
+        - dropbox
+        state: latest
+
+windows-inventory.yml 
+all:
+  hosts: localhost
+  vars:
+    ansible_user: arturs
+    ansible_connection: winrm
+    ansible_winrm_server_cert_validation: ignore
+
+
+Configuring Ubuntu 20.04
+
+I prefer snap packages (which auto-update and roll back gracefully) over apt packages, when available. The following works on Ubuntu 20.04:
+
+    Install Ansible: sudo apt update && sudo apt install -y ansible
+    Run the Ubuntu playbook: ansible-playbook ubuntu-playbook.yml -i ubuntu-inventory.yml --ask-become-pass --verbose
+
+ubuntu-playbook.yml 
+---
+- hosts: localhost
+  connection: local
+  become: yes
+  become_user: arturs
+  tasks:
+    - name: Install curl
+      apt:
+        name: curl
+          
+    - name: Install nvm
+      shell: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+      args:
+        creates: "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+      
+    - name: Add Dropbox source list and GPG key; Add Docker’s GPG key and set up stable repository
+      shell:
+        cmd: |
+          echo "deb [arch=i386,amd64] http://linux.dropbox.com/ubuntu bionic main" | sudo tee -a /etc/apt/sources.list.d/dropbox.list
+          sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 1C61A2656FB57B7E4DE0F4C1FC918B335044912E
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+          sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+        creates: /etc/apt/sources.list.d/dropbox.list
+        
+    - name: Install git, Dropbox and Docker
+      apt:
+        name:
+          - git
+          - dropbox
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        update_cache: yes
+        state: latest
+
+    - name: Install Canonical Livepatch, Chromium
+      snap:
+        name:
+          - canonical-livepatch
+          - chromium
+
+    - name: Install VSCode
+      snap:
+        name: code
+        classic: yes
+
+    - name: Install Slack
+      snap:
+        name: slack
+        classic: yes
+        
+    - name: Install Mackup
+      snap:
+        name: mackup
+        classic: yes
+
+
+ubuntu-inventory.yml hosted with ❤ by GitHub
+all:
+  hosts: localhost
+  vars:
+    ansible_user: arturs
+
+Then I run Dropbox, wait for it to sync and run mackup restore to restore configuration files previously backed up to Dropbox with mackup backup. Finally, install and run VSCode Settings Sync as before.
+
+That’s it!
+
+Some manual steps will always remain but overall this approach saves a lot of time once it’s part of your toolbelt. Many more parts of system configuration can be automated, see list of Ansible module collections for inspiration and feel free to fork and extend my example gists for your own use! :)

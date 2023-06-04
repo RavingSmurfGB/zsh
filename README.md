@@ -14,7 +14,7 @@ kindas based on - https://github.com/Lileso/the_black_pearl_ansible/blob/main/ro
 
 
 
-
+believe alot can be stolen from - https://levelup.gitconnected.com/getting-started-with-ansible-local-automation-of-windows-10-and-ubuntu-20-04-workstations-ffd03d7dc923
 
 
 #Instalation
