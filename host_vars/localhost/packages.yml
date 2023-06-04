@@ -5,3 +5,4 @@ chocolatey_packages:
   - youtube
   - veracrypt
   - wps_office
+  - sublime
