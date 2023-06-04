@@ -3,3 +3,5 @@ chocolatey_packages:
   - spotify
   - qobuz
   - youtube
+  - veracrypt
+  - wps_office
